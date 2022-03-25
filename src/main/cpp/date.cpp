@@ -18,6 +18,7 @@
 #include <log4cxx/helpers/date.h>
 
 #include <apr_time.h>
+#define LOG4CXX_USEC_PER_SEC 1000000LL
 #ifndef INT64_C
 	#define INT64_C(x) x ## LL
 #endif
@@ -27,7 +28,10 @@ using namespace log4cxx::helpers;
 
 IMPLEMENT_LOG4CXX_OBJECT(Date)
 
-Date::Date() : time(apr_time_now())
+
+Date::GetCurrentTimeFn Date::getCurrentTimeFn = Date::getCurrentTimeStd;
+
+Date::Date() : time(getCurrentTimeFn())
 {
 }
 
@@ -53,4 +57,16 @@ log4cxx_time_t Date::getMicrosecondsPerSecond()
 log4cxx_time_t Date::getNextSecond() const
 {
 	return ((time / APR_USEC_PER_SEC) + 1) * APR_USEC_PER_SEC;
+}
+
+void Date::setGetCurrentTimeFunction(GetCurrentTimeFn fn){
+	getCurrentTimeFn = fn;
+}
+
+log4cxx_time_t Date::currentTime(){
+	return getCurrentTimeFn();
+}
+
+log4cxx_time_t Date::getCurrentTimeStd(){
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }

@@ -37,6 +37,7 @@
 #include <log4cxx/helpers/bytebuffer.h>
 #include <log4cxx/logger.h>
 #include <log4cxx/private/log4cxx_private.h>
+#include <log4cxx/helpers/date.h>
 
 using namespace log4cxx;
 using namespace log4cxx::spi;
@@ -75,7 +76,7 @@ LoggingEvent::LoggingEvent(
 	ndcLookupRequired(true),
 	mdcCopyLookupRequired(true),
 	message(message1),
-	timeStamp(apr_time_now()),
+	timeStamp(Date::currentTime()),
 	locationInfo(locationInfo1),
 	threadName(getCurrentThreadName()),
 	threadUserName(getCurrentThreadUserName())

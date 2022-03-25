@@ -24,6 +24,7 @@
 #include <log4cxx/patternlayout.h>
 #include <log4cxx/rolling/timebasedrollingpolicy.h>
 #include <log4cxx/helpers/simpledateformat.h>
+#include <log4cxx/helpers/date.h>
 #include <iostream>
 #include <log4cxx/helpers/stringhelper.h>
 #include "../util/compare.h"
@@ -91,6 +92,8 @@ private:
 	 */
 	size_t num_test;
 
+	log4cxx_time_t current_time;
+
 	/**
 	 * Build file names with timestamps.
 	 * <p>
@@ -127,7 +130,7 @@ private:
 		bool        startInFuture   = false)
 	{
 		SimpleDateFormat    sdf(DATE_PATTERN_STR);
-		apr_time_t          now(apr_time_now());
+		log4cxx_time_t      now(current_time);
 		LogString           ext(withCompression ? LOG4CXX_STR(".gz") : LOG4CXX_STR(""));
 
 		now += startInFuture ? APR_USEC_PER_SEC : 0;
@@ -197,7 +200,7 @@ private:
 			message.append(pool.itoa(i));
 
 			LOG4CXX_DEBUG(logger, message);
-			apr_sleep(APR_USEC_PER_SEC * waitFactor);
+			current_time += (APR_USEC_PER_SEC * waitFactor);
 		}
 
 #undef  LOG4CXX_LOCATION
@@ -299,12 +302,9 @@ private:
 	 * </p>
 	 * @param[in,opt] millis
 	 */
-	void delayUntilNextSecond(size_t millis = 100)
+	void delayUntilNextSecond()
 	{
-		apr_time_t now  = apr_time_now();
-		apr_time_t next = ((now / APR_USEC_PER_SEC) + 1) * APR_USEC_PER_SEC + millis * 1000L;
-
-		apr_sleep(next - now);
+		current_time += APR_USEC_PER_SEC;
 	}
 
 	/**
@@ -315,11 +315,10 @@ private:
 	 * </p>
 	 * @param[in,opt] millis
 	 */
-	void delayUntilNextSecondWithMsg(size_t millis = 100)
+	void delayUntilNextSecondWithMsg()
 	{
-		std::cout << "Waiting until next second and " << millis << " millis.";
-		delayUntilNextSecond(millis);
-		std::cout << "Done waiting." << std::endl;
+		std::cout << "Advancing one second\n";
+		delayUntilNextSecond();
 	}
 
 	/**
@@ -385,6 +384,11 @@ public:
 		this->num_test = tc->suite->num_test;
 	}
 
+	log4cxx_time_t currentTime()
+	{
+		return current_time;
+	}
+
 	void setUp()
 	{
 		LoggerPtr root(Logger::getRootLogger());
@@ -393,6 +397,11 @@ public:
 					PatternLayoutPtr(new PatternLayout(
 							LOG4CXX_STR("%d{ABSOLUTE} [%t] %level %c{2}#%M:%L - %m%n"))))));
 		this->internalSetUp(this->num_test);
+//		current_time = log4cxx::helpers::Date::currentTime(); // Start at "about" now.
+//		current_time -= (current_time % APR_USEC_PER_SEC); // Go to the top of the second
+//		current_time++; // Need to not be at the top of a second for rollover logic to work correctly
+		current_time = 1; // Start at about unix epoch
+		log4cxx::helpers::Date::setGetCurrentTimeFunction( std::bind( &TimeBasedRollingTest::currentTime, this ) );
 	}
 
 	void tearDown()
@@ -426,6 +435,7 @@ public:
 		this->logMsgAndSleep(   pool, nrOfFileNames + 1, __LOG4CXX_FUNC__, __LINE__);
 		this->compareWitnesses( pool, LOG4CXX_STR("test1."), fileNames, __LINE__);
 	}
+
 
 	/**
 	 * No compression, with stop/restart, activeFileName left blank
@@ -468,6 +478,7 @@ public:
 		this->logMsgAndSleep(   pool, 2, __LOG4CXX_FUNC__, __LINE__, 3);
 		this->compareWitnesses( pool, LOG4CXX_STR("test2."), fileNames, __LINE__);
 	}
+
 
 	/**
 	 * With compression, activeFileName left blank, no stop/restart
@@ -674,6 +685,7 @@ public:
 			LOGUNIT_ASSERT_EQUAL(true, File(fileNames[x]).exists(pool));
 		}
 	}
+
 };
 
 LoggerPtr TimeBasedRollingTest::logger(Logger::getLogger("org.apache.log4j.TimeBasedRollingTest"));
