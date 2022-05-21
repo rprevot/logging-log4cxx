@@ -422,6 +422,7 @@ public:
 		PatternLayoutPtr        layout( new PatternLayout(PATTERN_LAYOUT));
 		RollingFileAppenderPtr  rfa(    new RollingFileAppender());
 		rfa->setLayout(layout);
+		rfa->setAppend(false);
 
 		TimeBasedRollingPolicyPtr tbrp(new TimeBasedRollingPolicy());
 		tbrp->setFileNamePattern(LOG4CXX_STR("output/test1-%d{" DATE_PATTERN "}"));
@@ -449,6 +450,7 @@ public:
 		PatternLayoutPtr        layout1(new PatternLayout(PATTERN_LAYOUT));
 		RollingFileAppenderPtr  rfa1(   new RollingFileAppender());
 		rfa1->setLayout(layout1);
+		rfa1->setAppend(false);
 
 		TimeBasedRollingPolicyPtr tbrp1(new TimeBasedRollingPolicy());
 		tbrp1->setFileNamePattern(LOG4CXX_STR("output/test2-%d{" DATE_PATTERN "}"));
@@ -473,6 +475,7 @@ public:
 		tbrp2->activateOptions(pool);
 		rfa2->setRollingPolicy(tbrp2);
 		rfa2->activateOptions(pool);
+		rfa2->setAppend(false);
 		logger->addAppender(rfa2);
 
 		this->logMsgAndSleep(   pool, 2, __LOG4CXX_FUNC__, __LINE__, 3);
