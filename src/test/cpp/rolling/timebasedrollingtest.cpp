@@ -672,7 +672,7 @@ public:
 #else
 		LogString dirNumber = std::to_string(dist(rng));
 #endif
-		LogString directoryName = "tbrolling-directory-";
+		LogString directoryName = LOG4CXX_STR("tbrolling-directory-");
 		directoryName.append( dirNumber );
 		filenamePattern.append( directoryName );
 		LogString filenamePatternPrefix = filenamePattern;
